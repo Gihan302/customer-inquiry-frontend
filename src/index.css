@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+
+/* App-wide base styles. Everything else is styled with Tailwind utility classes. */
+@layer base {
+  html {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+}
