@@ -32,6 +32,8 @@ The dev server is fixed to port **5173** because the backend's CORS only allows 
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Lint with oxlint |
+| `npm test` | Run the component tests once (Vitest) |
+| `npm run test:watch` | Re-run tests on every change |
 
 Test accounts (after `npm run db:seed` in the backend): `staff1@example.com` / `Password123!` and `staff2@example.com` / `Password123!`.
 
@@ -75,8 +77,30 @@ src/
 - Any 401 from the API (expired/invalid token) signs the user out and shows "Your session has ended".
 - Route guards only improve the experience; they are not security — the API checks every request.
 
+## Tests
+
+```bash
+npm test
+```
+
+Component tests use **Vitest + React Testing Library** in a simulated browser (jsdom). They drive the UI the way a user would (typing, clicking) and assert on what the user sees.
+
+| File | What it proves |
+|---|---|
+| `src/components/inquiries/InquiryForm.test.tsx` (6 tests) | **User interaction / validation (Situation 1):** submitting an empty form shows an error for every required field and sends nothing; invalid contact info is rejected; a valid form submits trimmed values with the chosen visibility; **backend** field errors appear under the matching field; non-field errors appear as an alert; the submit button is disabled while saving, so a double click cannot create duplicate inquiries. |
+| `src/components/inquiries/StatusActions.test.tsx` (6 tests) | **UI state for the status workflow:** each status shows exactly the allowed next action (New → "Start progress", In Progress → "Mark as resolved", Resolved → "Reopen"); the forbidden New → Resolved shortcut is never offered; clicking requests the correct status; buttons are disabled while a change is saving. |
+
+The tests were checked to be meaningful by deliberately breaking the code: allowing New → Resolved, or ignoring backend field errors, makes them fail.
+
+### Testing gaps
+
+- **API calls are not exercised in these tests.** Components are tested with a mocked `onSubmit`; the real Axios client, interceptors (token header, 401 sign-out) and `AuthContext` are not unit-tested.
+- **No end-to-end tests in the repository.** Full flows (login → create → change status, two-tab conflicts, another staff member opening a Private inquiry by URL) were verified during development with scripted headless-browser runs against the real API and a test database, but those scripts are not committed. Adding Playwright tests would close this gap.
+- **Pages are not tested individually** (Dashboard, Inquiries list with URL filters and debounced search, InquiryDetails 404/409 handling); their logic is covered only by the manual/E2E runs above.
+- **No visual regression, accessibility audit or cross-browser testing** (verified in Microsoft Edge only).
+- Security rules are deliberately **not** relied on in frontend tests: the backend test suite is the authority for authentication and Public/Private access.
+
 ## Known limitations
 
-- No automated frontend test suite in the repository; the UI was verified with scripted headless-browser runs against the API and a test database during development.
 - The API returns only the creator's id, so the UI shows "You" / "Colleague" rather than names.
 - No real-time updates (see above).
